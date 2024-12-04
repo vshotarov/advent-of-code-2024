@@ -1,7 +1,6 @@
 module Main where
 
 import qualified Common
-import Data.List (transpose)
 
 main :: IO ()
 main = do
@@ -13,15 +12,28 @@ main = do
     putStrLn $ "Parsed input: " ++ (Common.truncateString $ show parsedInput)
 
     -- Solve
+    let (numRows,numCols) = (length parsedInput, length $ head parsedInput)
     let answer1 = sum . map countXMAS
-                $ diagonals parsedInput
+                -- diagonals
+                $ map (\x -> walk parsedInput (1,1)          (x,0)) [0..numCols-1]
+               ++ map (\y -> walk parsedInput (1,1)          (0,y)) [1..numRows-1]
+               ++ map (\x -> walk parsedInput (-1,1)         (x,0)) [0..numCols-1]
+               ++ map (\y -> walk parsedInput (-1,1) (numCols-1,y)) [1..numRows-1]
+               -- rows
                ++ parsedInput
-               ++ transpose parsedInput
+               -- columns
+               ++ map (\x -> walk parsedInput (0,1) (x,0)) [0..numCols-1]
     let answer2 = countMAS parsedInput
 
     -- Print answers
     putStrLn $ "Part 1: " ++ show answer1
     putStrLn $ "Part 2: " ++ show answer2
+
+walk :: [String] -> (Int,Int) -> (Int,Int) -> String
+walk s (dx,dy) (x,y)
+  | x >= 0 && y >= 0 && x < (length $ head s) && y < length s =
+      ((s !! y) !! x):(walk s (dx,dy) (x+dx,y+dy))
+  | otherwise = []
 
 countXMAS :: String -> Int
 countXMAS [] = 0
@@ -31,26 +43,8 @@ countXMAS ('S':'A':'M':'X':xs) = 1 + countXMAS ('A':'M':'X':xs)
 countXMAS (_:xs) = countXMAS xs
 
 countMAS :: [String] -> Int
-countMAS s = go [(x,y) | x <- [1..numCols-1], y <- [1..numRows-2]]
-    where (numRows,numCols) = (length s, length $ head s)
-          get (x,y) = (s !! y) !! x
-          check (x,y) = let d = map get [(x-1,y-1),(x+1,y-1),(x,y),(x-1,y+1),(x+1,y+1)]
-                         in d `elem` ["MMASS","SSAMM","MSAMS","SMASM"]
-          go [] = 0
-          go ((x,y):xs)
-            | x < numCols-1 && y < numRows-1 = (fromEnum $ check (x,y)) + go xs
-            | otherwise = go xs
-
-diagonals :: [String] -> [String]
-diagonals xs = map (\x -> pos (x,0)) [0..numCols-1]
-            ++ map (\y -> pos (0,y)) [1..numRows-1]
-            ++ map (\x -> neg (x,0)) [0..numCols-1]
-            ++ map (\y -> neg (numCols-1,y)) [1..numRows-1]
-    where (numRows,numCols) = (length xs, length $ head xs)
-          pos (x,y)
-                | x < numCols && y < numRows = ((xs !! y) !! x):(pos (x+1,y+1))
-                | otherwise = []
-          neg (x,y)
-                | x >= 0 && y < numRows = ((xs !! y) !! x):(neg (x-1,y+1))
-                | otherwise = []
-
+countMAS s = sum $ map check [(x,y) | x <- [1..maxX-1], y <- [1..maxY-1]]
+    where (maxY,maxX) = (length s - 1, (length $ head s) - 1)
+          getKernel (x,y) = map get [(x-1,y-1),(x+1,y-1),(x,y),(x-1,y+1),(x+1,y+1)]
+                where get (xx,yy) = (s !! yy) !! xx
+          check (x,y) = fromEnum $ getKernel (x,y) `elem` ["MMASS","SSAMM","MSAMS","SMASM"]
