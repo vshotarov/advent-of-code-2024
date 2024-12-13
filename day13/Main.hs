@@ -2,9 +2,6 @@ module Main where
 
 import qualified Common
 import Data.List.Split (splitOn)
-import Data.Maybe
-
-import Debug.Trace
 
 main :: IO ()
 main = do
@@ -34,6 +31,7 @@ parse input = map (parseOne . lines) $ splitOn "\n\n" input
                       . Common.splitOnceOn ", " . snd . Common.splitOnceOn ": "
           parseOne [a,b,prize] = (parseLine 1 a, parseLine 1 b,
                                   parseLine 2 prize)
+          parseOne _ = error "malformatted input"
 
 cheapestWin :: Machine -> Int
 cheapestWin ((ax,ay),(bx,by),(px,py)) =

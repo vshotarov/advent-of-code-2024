@@ -215,7 +215,6 @@ executable day13
     main-is:          Main.hs
     build-depends:    base
                      ,Common
-                     ,containers
                      ,split
     hs-source-dirs:   day13
     default-language: Haskell2010
